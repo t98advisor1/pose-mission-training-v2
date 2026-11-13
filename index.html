@@ -864,6 +864,15 @@ html, body {
     #start-screen .btn-cta { font-size: 1rem; min-height: 44px; }
 }
 @media(prefers-reduced-motion:reduce) { #start-screen .home-action { animation: none; } }
+
+/* 세로 화면: 카메라 영상이 화면 전체 높이를 쓰도록 헤더·하단 조작을 영상 위에 겹침(영상은 자르지 않고 contain, 좌표 정합 유지) */
+@media (orientation: portrait) {
+    #game-screen .vision-stage { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: auto; z-index: 1; }
+    #game-screen .game-compact-header { position: relative; z-index: 30; background: rgba(15,23,42,.55); }
+    #game-screen .game-bottom-deck { position: relative; z-index: 30; margin-top: auto; background: rgba(15,23,42,.55); }
+    #game-screen .global-footer { display: none; }
+    #game-screen #preview-overlay { padding-top: 96px; padding-bottom: 120px; }
+}
 </style>
 
     <script type="module">

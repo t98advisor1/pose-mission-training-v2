@@ -274,6 +274,14 @@
             }
 
             letterbox = { offsetX: offX, offsetY: offY, drawWidth: drawW, drawHeight: drawH };
+            let dbg = document.getElementById("cam-size-badge");
+            if (!dbg) {
+                dbg = document.createElement("div");
+                dbg.id = "cam-size-badge";
+                dbg.style.cssText = "position:absolute;right:6px;top:126px;z-index:12;font-size:.62rem;color:#e2e8f0;background:rgba(0,0,0,.45);padding:1px 6px;border-radius:8px;pointer-events:none";
+                visionStage.appendChild(dbg);
+            }
+            dbg.textContent = "영상 " + videoW + "x" + videoH + (videoW >= videoH ? " 가로" : " 세로") + " / 화면 " + stageW + "x" + stageH;
         }
     }
 
