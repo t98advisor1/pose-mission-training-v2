@@ -33,6 +33,7 @@
     let bodyLastValidAt = 0;           // 전신 보너스: 마지막으로 조건을 만족한 프레임 시각
     const BODY_GRACE_MS = 400;          // 이 시간 이내의 일시 가림/떨림은 유지 시간을 초기화하지 않음
     let bodySubmitted = false;
+    let missionShots = [];   // 기기 메모리에만 보관(선택해 QR로 받을 때만 서버 전송), localStorage 저장 없음
     let gameStartedAt = null;
     let elapsedMs = 0;
     let elapsedInterval = null;
@@ -285,6 +286,50 @@
         }
     }
 
+    // [시험용 초안, 미배포] 지금 보이는 카메라 영상 + 코 장식 + 관절 표시를 브라우저 안에서 한 장으로 합성(서버 전송 없음)
+    function clearMissionShots() { missionShots.forEach(x => { try { URL.revokeObjectURL(x.url); } catch (e) {} }); missionShots = []; const g = document.getElementById("shots-gallery-box"); if (g) g.style.display = "none"; }
+    function pushMissionShot(name) {
+        try {
+            const c = window.captureMissionFrame();
+            const idx = missionShots.length;
+            missionShots.push({ name, url: "", pending: true });
+            c.toBlob(b => { if (b) { missionShots[idx] = { name, url: URL.createObjectURL(b) }; } }, "image/jpeg", 0.9);
+        } catch (e) { console.warn("사진 합성 실패", e); }
+    }
+    window.renderMissionShots = function () {
+        const box = document.getElementById("shots-gallery-box"), list = document.getElementById("shots-gallery-list");
+        if (!box || !list) return;
+        const shots = missionShots.filter(x => x.url);
+        list.innerHTML = "";
+        if (!shots.length) { box.style.display = "none"; return; }
+        box.style.display = "block";
+        shots.forEach((x, i) => {
+            const d = document.createElement("label");
+            d.style.cssText = "display:block;background:#fff;border-radius:10px;padding:4px;text-align:center;font-size:.75rem";
+            d.innerHTML = '<img alt="" style="width:100%;border-radius:8px;display:block"><input type="checkbox" data-i="' + i + '"> ' + x.name;
+            d.querySelector("img").src = x.url;
+            list.appendChild(d);
+        });
+        window.getPickedShots = () => [...list.querySelectorAll("input:checked")].map(e => shots[+e.dataset.i]);
+        const dl = document.getElementById("shots-download-btn");
+        dl.onclick = () => {
+            const picked = [...list.querySelectorAll("input:checked")].map(e => shots[+e.dataset.i]);
+            if (!picked.length) { document.getElementById("shots-msg").textContent = "저장할 사진을 먼저 선택해 주세요."; return; }
+            picked.forEach((x, k) => setTimeout(() => { const a = document.createElement("a"); a.href = x.url; a.download = "포즈챌린지-" + x.name + ".jpg"; document.body.appendChild(a); a.click(); a.remove(); }, k * 400));
+            document.getElementById("shots-msg").textContent = picked.length + "장 저장을 시작했어요. 실제 기기 갤러리/다운로드 폴더 저장은 직접 확인해 주세요.";
+        };
+    };
+    window.captureMissionFrame = function () {
+        const w = Math.round(visionStage.getBoundingClientRect().width), h = Math.round(visionStage.getBoundingClientRect().height);
+        const c = document.createElement("canvas"); c.width = w; c.height = h;
+        const g = c.getContext("2d"); g.fillStyle = "#000"; g.fillRect(0, 0, w, h);
+        const lb = letterbox;
+        g.save(); g.translate(w, 0); g.scale(-1, 1);          // 화면과 같은 거울 모드
+        g.drawImage(webcam, lb.offsetX, lb.offsetY, lb.drawWidth, lb.drawHeight);
+        g.drawImage(overlayCanvas, 0, 0, w, h);
+        g.restore();
+        return c;
+    };
     window.addEventListener("resize", () => {
         lastStageW = 0;
         updateCanvasSizeAndLetterbox();
@@ -879,6 +924,7 @@
                                     }, 800);
                                 } else if (!clearedPoses[currentPoseIndex]) {
                                     clearedPoses[currentPoseIndex] = true;
+                                    pushMissionShot(currentMission.name);
                                     const isBodyBonus = currentMission.type === "bonus";
                                     const bodyTier = bodyWindowMinScore;
                                     if (!isBodyBonus) totalScore = Math.min(700, totalScore + 100);
@@ -954,6 +1000,7 @@
         updateElapsedTime();
         stopElapsedClock();
         setAppScreen("result");
+        if (window.renderMissionShots) window.renderMissionShots();
         const nickname = (currentSession && currentSession.nickname) ? currentSession.nickname : "선생님";
         if (resultUserSummary) resultUserSummary.innerText = `${nickname} 선생님, 7개 미션과 전신 보너스를 완료했습니다!`;
         renderScoreNumbers();
@@ -1029,6 +1076,7 @@
         window.stopCamera();
         currentSession = null;
         userPaused = false;
+        clearMissionShots();
         clearedPoses = new Array(poses.length).fill(false);
         totalScore = bonusScore = eventBonusScore = bodyBonusScore = 0;
         bodySubmitted = false;
@@ -1135,6 +1183,7 @@
         setPracticeMode(false);
 
         userPaused = false;
+        clearMissionShots();
         clearedPoses = new Array(poses.length).fill(false);
         totalScore = 0;
         bonusScore = 0;

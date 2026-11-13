@@ -910,10 +910,10 @@ html, body {
                 <div class="gallery-nav"><button id="gallery-prev" type="button" aria-label="이전 포즈 사진">←</button><span id="gallery-position" aria-live="polite">1 / 7 · 큰 V</span><button id="gallery-next" type="button" aria-label="다음 포즈 사진">→</button></div>
                 <div class="start-entry-form">
                 <div class="input-box-wrapper">
-                    <input type="text" id="nickname-input" class="text-input" placeholder="닉네임 (최대 12자)" aria-label="닉네임" maxlength="12">
+                    <input type="text" id="nickname-input" class="text-input" placeholder="별명 (실명 금지, 최대 12자)" aria-label="닉네임" maxlength="12">
                 </div>
 
-                <button id="start-btn" class="btn-cta">게임 시작하기</button><p id="test-version-note" style="margin:8px 0 0;font-size:.85rem;color:#92400e;background:#fef3c7;border-radius:8px;padding:6px 10px">시험 버전: 점수는 저장되거나 랭킹에 반영되지 않습니다.</p>
+                <button id="start-btn" class="btn-cta">게임 시작하기</button><p id="test-version-note" style="margin:8px 0 0;font-size:.85rem;color:#92400e;background:#fef3c7;border-radius:8px;padding:6px 10px">별명(실명 금지)과 성공 결과만 랭킹에 공개돼요. 점수 기록은 행사 진행자가 이 기기에서 로그인한 뒤에만 저장돼요. 카메라 영상은 서버로 보내지 않아요. 결과 화면에서 고른 사진만 직접 QR로 받을 수 있어요.</p><details style="margin-top:8px;font-size:.85rem"><summary>행사 진행자 로그인</summary><div style="margin-top:6px"><input type="password" id="op-pin" autocomplete="off" placeholder="운영자 비밀번호" style="padding:8px;border:1px solid #ccc;border-radius:8px"> <button type="button" id="op-login" style="padding:8px 12px;border:0;border-radius:8px;background:#444;color:#fff">로그인</button> <button type="button" id="op-logout" style="display:none;padding:8px 12px;border:0;border-radius:8px;background:#999;color:#fff">로그아웃</button><p id="op-state" style="margin:4px 0"></p><p id="op-msg" style="margin:0;color:#b00020"></p></div></details>
                 </div>
 
                 <p class="home-privacy">
@@ -1044,7 +1044,8 @@ html, body {
                 <p id="result-elapsed-time" style="color:#0369a1;margin:4px 0 12px;font-weight:bold">소요 시간 00:00</p>
                 <div id="result-sync-status" class="sync-badge-box" style="margin-bottom: 16px;">점수 저장 확인 중...</div>
 
-                <div id="qr-test-box" style="margin:0 0 14px;padding:12px;border:2px dashed #fb7a14;border-radius:12px;background:#fff7e6;color:#4a2c00;text-align:left;font-size:.9rem"><strong>사진 받기 시험 (샘플 사진만)</strong><p style="margin:6px 0">이 버튼은 내 사진이 아닌 샘플 사진으로 QR 수령 흐름을 시험하는 별도 화면을 엽니다. 이 게임에서 찍거나 저장한 참가자 사진은 없습니다.</p><a href="https://pose-photo-pickup-test.indosupervisor0126.workers.dev/" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;padding:10px;border-radius:10px;background:#fb7a14;color:#fff;font-weight:700;text-decoration:none">샘플로 사진 받기 시험 열기</a></div>
+                <div id="shots-gallery-box" style="display:none;margin:0 0 14px;padding:12px;border:2px solid #fb7a14;border-radius:12px;background:#fff7e6;color:#4a2c00;text-align:left;font-size:.9rem"><strong>내 미션 사진</strong><p style="margin:6px 0">카메라 영상과 코 장식·관절 표시가 함께 담긴 사진이에요. 사진은 고르기 전까지 이 기기 메모리에만 있고 서버로 보내지 않아요. 고른 사진만 이 기기에 저장하거나 QR로 받을 수 있어요.</p><div id="shots-gallery-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px"></div><button id="shots-download-btn" type="button" style="width:100%;margin-top:10px;padding:10px;border:0;border-radius:10px;background:#fb7a14;color:#fff;font-weight:700">선택한 사진 저장</button><p id="shots-msg" style="margin:6px 0 0;font-size:.8rem"></p></div>
+                
                 <button id="retry-btn" class="btn-cta">다시 도전하기 🔄</button>
             </div>
 
@@ -1078,7 +1079,7 @@ html, body {
     </div>
 </dialog>
 
-<script src="./sheets-sync.js?v=20261009-37"></script>
+<script src="./sheets-sync.js?v=20261113-fe1"></script>
 <script>
 // 7가지 포즈 목록 및 모드 정의
 const poses = [
@@ -1661,7 +1662,8 @@ window.addEventListener('mediapipe-ready', () => {
     initAIModels();
 });
 </script>
-<script src="./experience.js?v=20261009-34"></script>
+<script src="./experience.js?v=20261113-fe1"></script>
+<script src="./festa.js?v=20261113-fe1"></script>
 <script src="./guide.js?v=20261009-37"></script>
 </body>
 </html>
