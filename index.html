@@ -1484,6 +1484,8 @@ async function startCamera() {
             const ladder = portraitStage ? [
                 { width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { exact: 9 / 16 }, facingMode: "user" },
                 { width: { ideal: 960 }, height: { ideal: 1280 }, aspectRatio: { exact: 3 / 4 }, facingMode: "user" },
+                // 가로 영상만 주는 기기(예: 가로가 기본인 태블릿): 16:9보다 위아래 시야가 넓은 4:3을 우선 요청
+                { width: { ideal: 1280 }, height: { ideal: 960 }, aspectRatio: { ideal: 4 / 3 }, facingMode: "user" },
                 { width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { ideal: 9 / 16 }, facingMode: "user" }
             ] : [
                 { width: { ideal: 1280 }, height: { ideal: 720 }, aspectRatio: { ideal: 16 / 9 }, facingMode: "user" }
@@ -1499,7 +1501,7 @@ async function startCamera() {
                     continue;
                 }
                 const st = s.getVideoTracks()[0] ? s.getVideoTracks()[0].getSettings() : {};
-                const okOrientation = !portraitStage || !st.width || !st.height || st.height >= st.width;
+                const okOrientation = !portraitStage || !st.width || !st.height || st.height >= st.width || (k === 2 && st.width / st.height <= 1.4);
                 if (okOrientation || k === ladder.length - 1) { requestStream = s; window.__camSettings = st; break; }
                 s.getTracks().forEach(t => t.stop());
             }
