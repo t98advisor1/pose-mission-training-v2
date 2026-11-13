@@ -198,7 +198,7 @@
         // 어떤 자세든 2초 유지하면 성공. 점수는 보이는 관절 수와 동작 크기(굽힘·뻗음)로 결정.
         const coverage=count/22;
         const spread=parts.reduce((sum,x)=>sum+x.activity,0)/4;   // 가려진 팔다리는 activity 0이라 이득 없음
-        const quality=coverage*(0.15+0.85*spread);
+        const quality=coverage*(0.4+0.6*spread);   // 관절 수가 1차 기준, 동작 크기는 보조 가중치(같은 관절 수에서 더 크게 움직이면 높은 단계)
         let grade=Math.max(1,Math.min(7,Math.ceil(quality*7-1e-9)));
         if(!inFrame(lm[27])||!inFrame(lm[28]))grade=Math.min(grade,4); // 발목이 안 보이면 최대 4단계
         const score=grade*100;
