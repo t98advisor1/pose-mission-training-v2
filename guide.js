@@ -46,7 +46,7 @@
             const pose = basePoses.find(p => p.id === entry.id);
             const pair = document.createElement('div');
             pair.className = 'guide-photo-pair';
-            [[pose.src,`${entry.title} 예시 사진`,'포즈 예시 사진'],[`hints/${entry.id}.svg`,`${entry.title} 관절 연결선 힌트`,'관절 연결선 힌트']].forEach(([src,alt,caption]) => {
+            [[pose.src,`${entry.title} 예시 사진`,'포즈 예시 사진'],[`hints-${entry.id}.svg`,`${entry.title} 관절 연결선 힌트`,'관절 연결선 힌트']].forEach(([src,alt,caption]) => {
                 const figure = document.createElement('figure');
                 const img = document.createElement('img');
                 img.src = src; img.alt = alt; img.decoding = 'async';

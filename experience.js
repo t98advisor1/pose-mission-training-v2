@@ -17,7 +17,7 @@
         flower: { emoji: "🌻", desc: "사진처럼 손바닥을 펼쳐 볼 양옆에! 손목은 어깨보다 조금 위로 올려요." },
         hero: { emoji: "🦸‍♂️", desc: "한 손은 하늘 높이 뻗고, 반대 손은 듬직하게 허리에 얹으세요!" },
         dab: { emoji: "🕺", desc: "한 팔을 대각선으로 뻗고, 얼굴은 반대 팔꿈치에 살짝 묻으세요!" },
-        body_bonus: { emoji: "⭐", desc: "팔·다리를 활짝! 양발까지 보이게 2초 유지해요." }
+        body_bonus: { emoji: "⭐", desc: "팔·다리를 활짝! 아무 자세나 2초 유지하면 성공! 관절이 많이 보이고 동작이 클수록 점수가 높아요." }
     };
 
     // 생명주기 및 세대 관리 변수
@@ -30,6 +30,8 @@
     let eventBonusScore = 0;
     let bodyBonusScore = 0;
     let bodyWindowMinScore = 0;
+    let bodyLastValidAt = 0;           // 전신 보너스: 마지막으로 조건을 만족한 프레임 시각
+    const BODY_GRACE_MS = 400;          // 이 시간 이내의 일시 가림/떨림은 유지 시간을 초기화하지 않음
     let bodySubmitted = false;
     let gameStartedAt = null;
     let elapsedMs = 0;
@@ -161,39 +163,44 @@
         const reach=subtract(p[c],p[a]);
         return {visible:true,angle,sideReach:Math.max(0,Math.min(1,(reach.x*out.x+reach.y*out.y)/length)),open:false,strong:false};
     }
+    // v8 (로컬 수정안): 화면 가장자리 여유, 발목 누락 허용(단 등급 상한), 굽힘·큰 동작 모두 점수화.
+    // 모든 거리는 몸통 길이(어깨중점-엉덩이중점)로 정규화해 몸 크기·카메라 거리 영향을 줄임.
+    const EDGE_MARGIN = 0.03;
+    const inFrame = p => !!p && Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.visibility) &&
+        p.visibility >= .4 && p.x >= -EDGE_MARGIN && p.x <= 1+EDGE_MARGIN && p.y >= -EDGE_MARGIN && p.y <= 1+EDGE_MARGIN;
+    function limbActivity(p,a,b,c,torso,down,isLeg) {
+        if(!p[a]||!p[b]||!p[c])return {visible:false,angle:null,activity:0,bend:0,reach:0};
+        const angle=elbowOrKneeAngle(p[a],p[b],p[c]);
+        if(angle===null)return {visible:true,angle:null,activity:0,bend:0,reach:0};
+        const bend=Math.max(0,Math.min(1,(180-angle)/90));              // 많이 구부릴수록 1
+        const v=subtract(p[c],p[a]),m=magnitude(v);
+        // 몸통 아래 방향 기준으로 팔다리가 벗어난 각도: 서 있는 기본 자세는 0, 팔은 120°, 다리는 35° 벌리면 1
+        const off=m>EPS?Math.acos(Math.max(-1,Math.min(1,(v.x*down.x+v.y*down.y)/m)))*180/Math.PI:0;
+        const reach=Math.max(0,Math.min(1,off/(isLeg?35:120)));
+        return {visible:true,angle,bend,reach,activity:Math.max(bend,reach)};
+    }
     function evaluateFullBodyBonus(lm,width,height) {
-        const count=Array.isArray(lm)?BODY_BONUS_POINTS.filter(i=>pointValid(lm[i])).length:0;
+        const count=Array.isArray(lm)?BODY_BONUS_POINTS.filter(i=>inFrame(lm[i])).length:0;
         const failure=(message,metrics=null)=>({valid:false,score:0,grade:0,count,coverage:count/22,spread:0,quality:0,openParts:0,message,metrics});
         if(!Array.isArray(lm)||!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)
             return failure('카메라 화면이 준비되면 시작해요.');
-        if(!FRAME_POINTS.every(i=>pointValid(lm[i])))return failure('어깨부터 양발까지 화면 안에 들어오세요.');
-        const p=[];for(const i of BODY_BONUS_POINTS)if(pointValid(lm[i]))p[i]={x:lm[i].x*width,y:lm[i].y*height};
+        const core=[11,12,23,24,25,26];
+        if(!core.every(i=>inFrame(lm[i])))return failure('어깨부터 무릎까지 화면 안에 들어오세요. 조금 더 뒤로 물러나 보세요.');
+        const p=[];for(const i of BODY_BONUS_POINTS)if(inFrame(lm[i]))p[i]={x:lm[i].x*width,y:lm[i].y*height};
         const shoulders=midpoint(p[11],p[12]),hips=midpoint(p[23],p[24]);
-        if(distance(p[11],p[12])<=EPS||distance(p[23],p[24])<=EPS||distance(shoulders,hips)<=EPS)
+        const torso=distance(shoulders,hips);
+        if(distance(p[11],p[12])<=EPS||distance(p[23],p[24])<=EPS||torso<=EPS)
             return failure('몸의 관절이 다시 보이도록 자세를 잡아주세요.');
-        const leftArm=limb(p,11,13,15,shoulders),rightArm=limb(p,12,14,16,shoulders);
-        const leftLeg=limb(p,23,25,27,hips),rightLeg=limb(p,24,26,28,hips);
-        for(const arm of [leftArm,rightArm]) {
-            arm.open=arm.angle!==null&&arm.angle>=145&&arm.sideReach>=.45;
-            arm.strong=arm.angle!==null&&arm.angle>=155&&arm.sideReach>=.65;
-        }
-        for(const leg of [leftLeg,rightLeg]) {
-            leg.open=leg.angle!==null&&leg.angle>=145&&leg.sideReach>=.18;
-            leg.strong=leg.angle!==null&&leg.angle>=155&&leg.sideReach>=.28;
-        }
-        const metrics={leftArm,rightArm,leftLeg,rightLeg};
-        if(!leftLeg.open||!rightLeg.open)return failure('양발을 편하게 벌리고 무릎을 펴주세요.',metrics);
-        if(!leftArm.open&&!rightArm.open)return failure('한 팔 이상을 몸 바깥으로 크게 펼쳐주세요.',metrics);
-        const openParts=[leftArm,rightArm,leftLeg,rightLeg].filter(x=>x.open).length;
-        const clamp01=value=>Math.max(0,Math.min(1,value));
-        for(const [part,target] of [[leftArm,.85],[rightArm,.85],[leftLeg,.50],[rightLeg,.50]]) {
-            part.expansion=part.angle===null?0:clamp01((part.angle-100)/70)*clamp01(part.sideReach/target);
-        }
+        const down=unit(subtract(hips,shoulders));
+        const parts=[limbActivity(p,11,13,15,torso,down,false),limbActivity(p,12,14,16,torso,down,false),limbActivity(p,23,25,27,torso,down,true),limbActivity(p,24,26,28,torso,down,true)];
+        const metrics={leftArm:parts[0],rightArm:parts[1],leftLeg:parts[2],rightLeg:parts[3]};
+        const openParts=parts.filter(x=>x.activity>=.35).length;
+        // 어떤 자세든 2초 유지하면 성공. 점수는 보이는 관절 수와 동작 크기(굽힘·뻗음)로 결정.
         const coverage=count/22;
-        const spread=[leftArm,rightArm,leftLeg,rightLeg].reduce((sum,part)=>sum+part.expansion,0)/4;
-        const quality=coverage*spread;
+        const spread=parts.reduce((sum,x)=>sum+x.activity,0)/4;   // 가려진 팔다리는 activity 0이라 이득 없음
+        const quality=coverage*(0.15+0.85*spread);
         let grade=Math.max(1,Math.min(7,Math.ceil(quality*7-1e-9)));
-        if(count<22 || spread<.85)grade=Math.min(6,grade);
+        if(!inFrame(lm[27])||!inFrame(lm[28]))grade=Math.min(grade,4); // 발목이 안 보이면 최대 4단계
         const score=grade*100;
         return {valid:true,score,grade,count,coverage,spread,quality,openParts,message:`${grade}/7단계, 예상 ${score}점이에요. 2초 동안 유지하세요.`,metrics};
     }
@@ -674,7 +681,7 @@
             if (hintFallback) hintFallback.style.display = "none";
 
             // SVG 로딩 지연은 메인 타이머를 막지 않음
-            hintImg.src = `hints/${currentPose.id}.svg`;
+            hintImg.src = `hints-${currentPose.id}.svg`;
         }
 
         let isHandled = false;
@@ -818,7 +825,10 @@
 
                         drawSkeleton(userLandmarks, isMatched);
 
-                        if (isMatched) {
+                        if (isMatched && bodyEvaluation) bodyLastValidAt = now;
+                        if (!isMatched && bodyEvaluation && accumulatedHoldMs > 0 && now - bodyLastValidAt <= BODY_GRACE_MS) {
+                            lastFrameTimestamp = now; // 짧은 인식 끊김: 유지 시간 정지(누적 안 함), 초기화 안 함
+                        } else if (isMatched) {
                             if (bodyEvaluation) {
                                 bodyWindowMinScore = bodyWindowMinScore === 0 ? bodyEvaluation.score : Math.min(bodyWindowMinScore, bodyEvaluation.score);
                             }
