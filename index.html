@@ -1469,15 +1469,33 @@ async function startCamera() {
             return;
         }
 
-        requestStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-    width: { ideal: window.innerWidth > window.innerHeight ? 1280 : 720 },
-    height: { ideal: window.innerWidth > window.innerHeight ? 720 : 1280 },
-    aspectRatio: { ideal: window.innerWidth > window.innerHeight ? (16 / 9) : (9 / 16) },
-    facingMode: "user"
-},
-            audio: false
-        });
+        // 세로 화면이면 세로(높이>너비) 영상을 우선 요청하고, 실제로 받은 영상이 가로면 다른 제약으로 다시 시도
+        {
+            const portraitStage = window.innerHeight >= window.innerWidth;
+            const ladder = portraitStage ? [
+                { width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { exact: 9 / 16 }, facingMode: "user" },
+                { width: { ideal: 960 }, height: { ideal: 1280 }, aspectRatio: { exact: 3 / 4 }, facingMode: "user" },
+                { width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { ideal: 9 / 16 }, facingMode: "user" }
+            ] : [
+                { width: { ideal: 1280 }, height: { ideal: 720 }, aspectRatio: { ideal: 16 / 9 }, facingMode: "user" }
+            ];
+            let lastErr = null;
+            for (let k = 0; k < ladder.length; k++) {
+                let s = null;
+                try {
+                    s = await navigator.mediaDevices.getUserMedia({ video: ladder[k], audio: false });
+                } catch (e) {
+                    lastErr = e;
+                    if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) throw e;
+                    continue;
+                }
+                const st = s.getVideoTracks()[0] ? s.getVideoTracks()[0].getSettings() : {};
+                const okOrientation = !portraitStage || !st.width || !st.height || st.height >= st.width;
+                if (okOrientation || k === ladder.length - 1) { requestStream = s; window.__camSettings = st; break; }
+                s.getTracks().forEach(t => t.stop());
+            }
+            if (!requestStream) throw lastErr || new Error("camera unavailable");
+        }
 
         // getUserMedia 직후 세대 검사: 만약 이미 세대가 변경되었다면 이 요청의 스트림만 즉시 해제
         if (thisGen !== cameraGeneration || currentSignal.aborted) {
