@@ -22,7 +22,7 @@ Gemini에서 실제 생성한 HTML·JavaScript와 수정 응답을 조립하고,
 
 최종 점수는 **기본 점수 + 이벤트 보너스 + 전신 보너스**입니다. 같은 기본 미션을 다시 보내도 가산하지 않고, 전신은 첫 확정 점수를 유지해 다른 등급으로 재전송해도 더하지 않습니다. 전신에는 별도 랜덤 이벤트 보너스를 붙이지 않습니다. 앱은 성공 직후 예상 점수를 보여 주며, 저장 완료는 Google Apps Script의 영수증을 확인한 뒤 표시합니다. 서버에 먼저 저장된 전신 점수가 예상과 다르면 서버 값을 반영합니다. 랭킹은 서버가 계산한 닉네임별 최고 최종 합계 점수를 읽습니다.
 
-카메라 영상·촬영 사진·인식한 관절 좌표는 저장하거나 서버로 보내지 않습니다. 사슴뿔·코·볼터치도 기기 안에서 카메라 화면에만 그립니다. POST 항목은 `challengeId`·`nickname`·`mission` 세 가지이며, 전신도 `전신 보너스 100`부터 `전신 보너스 700`까지 100점 단위 미션 이름 중 하나로 보냅니다. 별도 점수나 관절 정보를 보내지 않습니다. 시트에는 미션별 점수·기본 점수·이벤트 보너스·전신 보너스·최종 합계·갱신시각을 기록합니다. 저장 대기 결과는 브라우저에 보관해 재시도합니다. 시트 원본은 비공개이며 공개 점수 API는 닉네임·점수·완료 결과를 제공합니다. 본인 인증이 없는 연습용 랭킹이라 실제 이름 대신 서로 다른 별명을 사용합니다.
+카메라 영상·촬영 사진·인식한 관절 좌표는 기본으로 이 기기 안에서만 처리합니다. 결과 화면에서 직접 고른 사진을 'QR로 받기'로 보낼 때만 만료기한(TTL) 20분의 서버 임시저장(Cloudflare KV)에 올라갑니다. 사슴뿔·코·볼터치도 기기 안에서 카메라 화면에만 그립니다. POST 항목은 `challengeId`·`nickname`·`mission` 세 가지이며, 전신도 `전신 보너스 100`부터 `전신 보너스 700`까지 100점 단위 미션 이름 중 하나로 보냅니다. 별도 점수나 관절 정보를 보내지 않습니다. 시트에는 미션별 점수·기본 점수·이벤트 보너스·전신 보너스·최종 합계·갱신시각을 기록합니다. 저장 대기 결과는 브라우저에 보관해 재시도합니다. 시트 원본은 비공개이며 공개 점수 API는 닉네임·점수·완료 결과를 제공합니다. 본인 인증이 없는 연습용 랭킹이라 실제 이름 대신 서로 다른 별명을 사용합니다.
 
 2026-10-09의 앞선 3등급 배포본에서 경험 엔진 **72개**, 전신 기하·승인 사진 **23개**, 저장 연결 **51개**, 서버 **30개**, 연결·서버 결합 **2개** 검사를 각각 통과했습니다. 실제 Apps Script 버전3와 시트14열에서 합성 시험 참가자의 기본700 + 이벤트60 + 전신300 = **1060점**과 랭킹 표시를 대조했습니다. 다른 등급100으로 중복 전송해도 최초300점·최종합계·갱신시각이 유지됐고, 기존 참가자 기록도 보존됐습니다. 이 시험에는 카메라를 사용하지 않았습니다. ISO와 GMT+0900 시각 문자열의 형식 차이는 같은 시각으로 변환해 비교했습니다. 승인된 AI 사진 7장은 각각의 목표 판정을 통과했고 꽃받침의 손목 매칭은 영상 비율에 맞는 픽셀 거리로 보완했습니다. 정적 AI 사진 분석과 VM 검사는 실제 사람의 자세 인식률이나 휴대폰 성능을 나타내지 않습니다.
 
@@ -45,9 +45,9 @@ index.html
 experience.js
 sheets-sync.js
 guide.js
-assets/
+assets-
   book-cover.jpg
-photos/
+photos-
   big-v-v2.png
   heart-v2.png
   victory-v2.png
@@ -55,7 +55,7 @@ photos/
   flower-v2.png
   hero-v2.png
   dab-v2.png
-hints/
+hints-
   big_v.svg
   heart.svg
   victory.svg
@@ -67,14 +67,14 @@ hints/
 README.md
 ```
 
-`index.html`은 웹페이지와 인식 기본 코드, `experience.js`는 사진 예고·자동 진행·전신 보너스·경과 시간·카메라·AR·예비 연습, `sheets-sync.js`는 저장 큐·영수증·랭킹 연결, `guide.js`는 매뉴얼과 사진 캐러셀, `assets/`는 책 표지, `photos/`는 승인된 AI 생성 포즈 사진입니다. `hints/`에는 기본 미션 SVG 7개만 올립니다. 전신은 문장으로 안내하며 사용하지 않는 `body_bonus.svg`는 로컬 원문에만 보존합니다. 공개 파일은 위 목록의 총 21개입니다. `.nojekyll`은 별도 Jekyll 처리를 건너뛰도록 두는 빈 파일입니다. **`preview-server.mjs`, `versions/`, `backend/`는 로컬 확인·원문·설치 이력용이므로 앱 공개 파일에 포함하지 않습니다.** 브라우저의 파일 업로드는 `.gitignore`만으로 제외되지 않으니 선택한 파일을 직접 확인합니다.
+`index.html`은 웹페이지와 인식 기본 코드, `experience.js`는 사진 예고·자동 진행·전신 보너스·경과 시간·카메라·AR·예비 연습, `sheets-sync.js`는 저장 큐·영수증·랭킹 연결, `guide.js`는 매뉴얼과 사진 캐러셀, `assets-`는 책 표지, `photos-`는 승인된 AI 생성 포즈 사진입니다. `hints-`에는 기본 미션 SVG 7개만 올립니다. 전신은 문장으로 안내하며 사용하지 않는 `body_bonus.svg`는 로컬 원문에만 보존합니다. 공개 파일은 위 목록의 총 21개입니다. `.nojekyll`은 별도 Jekyll 처리를 건너뛰도록 두는 빈 파일입니다. **`preview-server.mjs`, `versions/`, `backend/`는 로컬 확인·원문·설치 이력용이므로 앱 공개 파일에 포함하지 않습니다.** 브라우저의 파일 업로드는 `.gitignore`만으로 제외되지 않으니 선택한 파일을 직접 확인합니다.
 
 개인정보, 실제 참가 기록, Google Sheets 원본·내보내기 파일, OAuth 토큰·비밀키·`.env`는 올리지 않습니다. 시트 연결이 추가된 뒤에도 공개 파일에 비밀값을 넣지 않습니다.
 
 ## GitHub Pages로 직접 게시하기
 
 1. GitHub에서 사용할 전용 저장소를 엽니다. 새 저장소가 필요하면 승인된 계정·공개 범위로 만듭니다. GitHub Free에서 Pages를 사용하려면 공개 저장소가 필요합니다. [GitHub 공식 생성 안내](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site)
-2. **Add file → Upload files**에서 위 파일을 올립니다. `assets/`·`photos/`·`hints/` 폴더 구조도 유지합니다. **Commit changes**로 저장한 뒤, `main` 브랜치 첫 화면에 `index.html`과 세 폴더가 있는지 확인합니다.
+2. **Add file → Upload files**에서 위 파일을 올립니다. `assets-`·`photos-`·`hints-` 폴더 구조도 유지합니다. **Commit changes**로 저장한 뒤, `main` 브랜치 첫 화면에 `index.html`과 세 폴더가 있는지 확인합니다.
 3. 저장소의 **Settings → Pages**를 엽니다. Settings가 안 보이면 해당 저장소를 관리할 권한부터 확인합니다.
 4. **Build and deployment → Source**를 **Deploy from a branch**로 고릅니다.
 5. **Branch: main**, **Folder: /(root)**를 선택하고 **Save**를 누릅니다. 이 설정 순서는 [GitHub 공식 게시 소스 안내](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)를 따릅니다.

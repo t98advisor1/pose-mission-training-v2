@@ -917,7 +917,7 @@ html, body {
                 </div>
 
                 <p class="home-privacy">
-                    영상·사진·신체 좌표는 저장·전송하지 않아요.<br>실전의 닉네임과 성공 결과만 기록해요.
+                    카메라 영상·사진·신체 좌표는 기본으로 이 기기 안에서만 처리해요. 결과 화면에서 직접 고른 사진을 'QR로 받기'로 보낼 때만, 그 사진이 만료기한(TTL) 20분의 서버 임시저장(Cloudflare KV)에 올라가요.<br>랭킹에는 별명과 점수만 기록해요.
                 </p>
                 <div id="game-sync-status" class="sync-badge-box">점수 서버 준비 완료</div>
             </div>
@@ -1044,7 +1044,7 @@ html, body {
                 <p id="result-elapsed-time" style="color:#0369a1;margin:4px 0 12px;font-weight:bold">소요 시간 00:00</p>
                 <div id="result-sync-status" class="sync-badge-box" style="margin-bottom: 16px;">점수 저장 확인 중...</div>
 
-                <div id="shots-gallery-box" style="display:none;margin:0 0 14px;padding:12px;border:2px solid #fb7a14;border-radius:12px;background:#fff7e6;color:#4a2c00;text-align:left;font-size:.9rem"><strong>내 미션 사진</strong><p style="margin:6px 0">카메라 영상과 코 장식·관절 표시가 함께 담긴 사진이에요. 사진은 고르기 전까지 이 기기 메모리에만 있고 서버로 보내지 않아요. 고른 사진만 이 기기에 저장하거나 QR로 받을 수 있어요.</p><div id="shots-gallery-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px"></div><button id="shots-download-btn" type="button" style="width:100%;margin-top:10px;padding:10px;border:0;border-radius:10px;background:#fb7a14;color:#fff;font-weight:700">선택한 사진 저장</button><p id="shots-msg" style="margin:6px 0 0;font-size:.8rem"></p></div>
+                <div id="shots-gallery-box" style="display:none;margin:0 0 14px;padding:12px;border:2px solid #fb7a14;border-radius:12px;background:#fff7e6;color:#4a2c00;text-align:left;font-size:.9rem"><strong>내 미션 사진</strong><p style="margin:6px 0">카메라 영상과 코 장식·관절 표시가 함께 담긴 사진이에요. 사진은 고르기 전까지 이 기기 메모리에만 있어요. 'QR로 받기'를 누른 사진만 서버로 보내져요. 고른 사진만 이 기기에 저장하거나 QR로 받을 수 있어요.</p><div id="shots-gallery-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px"></div><button id="shots-download-btn" type="button" style="width:100%;margin-top:10px;padding:10px;border:0;border-radius:10px;background:#fb7a14;color:#fff;font-weight:700">선택한 사진 저장</button><p id="shots-msg" style="margin:6px 0 0;font-size:.8rem"></p></div>
                 
                 <button id="retry-btn" class="btn-cta">다시 도전하기 🔄</button>
             </div>
