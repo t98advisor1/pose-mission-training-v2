@@ -6,7 +6,7 @@
  * Ranking is mounted and polled only on the result screen; saving remains independent.
  */
 (function() {
-    let SHEETS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby23Qk5rnf8slPA-KyMxCNAZjeU_NHkK4UQEVgCI0vNEd1sLHrOyxV_f1Zl2TNqRnnN/exec";
+    let SHEETS_WEB_APP_URL = ""; // 시험 버전: 원본 랭킹/시트로 점수를 보내지 않음
 
     const VALID_MISSIONS = [
         "큰 V",
@@ -82,7 +82,7 @@
         return scores;
     }
 
-    const STORAGE_KEY = "POSE_GAME_SYNC_STATE_V2";
+    const STORAGE_KEY = "POSE_GAME_SYNC_STATE_V2_TEST_ISOLATED";
     const LEADERBOARD_DELAY_MS = 5000;
     const JSONP_TIMEOUT_MS = 8000;
     const QUEUE_RETRY_INTERVAL_MS = 4000;
@@ -329,7 +329,7 @@
         if (cachedLeaderboardData === null) {
             summary.textContent = leaderboardReadFailed
                 ? "랭킹을 불러오지 못했습니다. 자동으로 다시 시도합니다."
-                : "랭킹을 불러오는 중입니다.";
+                : "시험 버전에서는 랭킹을 연결하지 않았어요.";
             list.textContent = "";
             return;
         }
@@ -365,7 +365,7 @@
 
         if (!statusText) {
             if (!SHEETS_WEB_APP_URL) {
-                statusText = "웹앱 URL 설정 대기 중 (전송 보류)";
+                statusText = "시험 버전: 점수를 저장하지 않아요";
             } else {
                 const currentPending = syncQueue.filter(item => item.challengeId === currentChallengeId).length;
                 const pastPending = syncQueue.length - currentPending;
@@ -425,7 +425,7 @@
         if (leaderboard === null) {
             listBox.textContent = leaderboardReadFailed
                 ? "랭킹을 불러오지 못했습니다. 자동 재시도 중입니다."
-                : "랭킹을 불러오는 중입니다.";
+                : "시험 버전에서는 랭킹을 연결하지 않았어요.";
             if (updatedElem) updatedElem.textContent = leaderboardReadFailed ? "연결 확인 전" : "-";
             renderTopTenUI();
             return;
